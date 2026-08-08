@@ -7,13 +7,11 @@ package org.owasp.webgoat.lessons.jwt.claimmisuse;
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed;
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.success;
 
-import com.auth0.jwk.JwkException;
-import com.auth0.jwk.JwkProviderBuilder;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPublicKey;
 import org.apache.commons.lang3.StringUtils;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
@@ -37,6 +35,19 @@ import org.springframework.web.bind.annotation.RestController;
 })
 public class JWTHeaderJKUEndpoint implements AssignmentEndpoint {
 
+  // Tokens are verified with the key of this server, never with a key set the token points to.
+  private static final RSAPublicKey SIGNING_PUBLIC_KEY = generateSigningKey();
+
+  private static RSAPublicKey generateSigningKey() {
+    try {
+      var keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+      keyPairGenerator.initialize(2048);
+      return (RSAPublicKey) keyPairGenerator.generateKeyPair().getPublic();
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
   @PostMapping("jku/follow/{user}")
   public @ResponseBody String follow(@PathVariable("user") String user) {
     if ("Jerry".equals(user)) {
@@ -53,10 +64,7 @@ public class JWTHeaderJKUEndpoint implements AssignmentEndpoint {
     } else {
       try {
         var decodedJWT = JWT.decode(token);
-        var jku = decodedJWT.getHeaderClaim("jku");
-        var jwkProvider = new JwkProviderBuilder(new URL(jku.asString())).build();
-        var jwk = jwkProvider.get(decodedJWT.getKeyId());
-        var algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey());
+        var algorithm = Algorithm.RSA256(SIGNING_PUBLIC_KEY);
         JWT.require(algorithm).build().verify(decodedJWT);
 
         var username = decodedJWT.getClaims().get("username").asString();
@@ -68,7 +76,7 @@ public class JWTHeaderJKUEndpoint implements AssignmentEndpoint {
         } else {
           return failed(this).feedback("jwt-final-not-tom").build();
         }
-      } catch (MalformedURLException | JWTVerificationException | JwkException e) {
+      } catch (JWTVerificationException e) {
         return failed(this).feedback("jwt-invalid-token").output(e.toString()).build();
       }
     }

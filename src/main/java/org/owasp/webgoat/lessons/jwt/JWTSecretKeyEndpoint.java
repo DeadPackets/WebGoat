@@ -12,11 +12,11 @@ import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.impl.TextCodec;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
 import org.owasp.webgoat.container.assignments.AttackResult;
@@ -34,11 +34,16 @@ public class JWTSecretKeyEndpoint implements AssignmentEndpoint {
   public static final String[] SECRETS = {
     "victory", "business", "available", "shipping", "washington"
   };
-  public static final String JWT_SECRET =
-      TextCodec.BASE64.encode(SECRETS[new Random().nextInt(SECRETS.length)]);
+  public static final String JWT_SECRET = TextCodec.BASE64.encode(randomSecret());
   private static final String WEBGOAT_USER = "WebGoat";
   private static final List<String> expectedClaims =
       List.of("iss", "iat", "exp", "aud", "sub", "username", "Email", "Role");
+
+  private static byte[] randomSecret() {
+    var secret = new byte[32];
+    new SecureRandom().nextBytes(secret);
+    return secret;
+  }
 
   @RequestMapping(path = "/JWT/secret/gettoken", produces = MediaType.TEXT_HTML_VALUE)
   @ResponseBody
