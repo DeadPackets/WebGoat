@@ -60,9 +60,7 @@ public class ShopEndpoint {
 
   @GetMapping(value = "/coupons", produces = MediaType.APPLICATION_JSON_VALUE)
   public CheckoutCodes all() {
-    List<CheckoutCode> all = Lists.newArrayList();
-    all.addAll(this.checkoutCodes.getCodes());
-    all.add(new CheckoutCode(ClientSideFilteringFreeAssignment.SUPER_COUPON_CODE, 100));
-    return new CheckoutCodes(all);
+    // the privileged coupon is never sent to the client; hiding it in the browser is not filtering
+    return new CheckoutCodes(Lists.newArrayList(this.checkoutCodes.getCodes()));
   }
 }

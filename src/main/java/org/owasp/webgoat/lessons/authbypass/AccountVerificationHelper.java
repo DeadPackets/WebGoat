@@ -19,7 +19,7 @@ public class AccountVerificationHelper {
     userSecQuestions.put("secQuestion1", "Baker Street");
   }
 
-  private static final Map<Integer, Map> secQuestionStore = new HashMap<>();
+  private static final Map<Integer, Map<String, String>> secQuestionStore = new HashMap<>();
 
   static {
     secQuestionStore.put(verifyUserId, userSecQuestions);
@@ -55,26 +55,18 @@ public class AccountVerificationHelper {
   // end of cheating check ... the method below is the one of real interest. Can you find the flaw?
 
   public boolean verifyAccount(Integer userId, HashMap<String, String> submittedQuestions) {
-    // short circuit if no questions are submitted
-    if (submittedQuestions.entrySet().size() != secQuestionStore.get(verifyUserId).size()) {
+    Map<String, String> storedQuestions = secQuestionStore.get(userId);
+    if (storedQuestions == null || submittedQuestions.size() != storedQuestions.size()) {
       return false;
     }
 
-    if (submittedQuestions.containsKey("secQuestion0")
-        && !submittedQuestions
-            .get("secQuestion0")
-            .equals(secQuestionStore.get(verifyUserId).get("secQuestion0"))) {
-      return false;
+    // every stored question must be answered correctly; renaming a key no longer skips its check
+    for (Map.Entry<String, String> storedQuestion : storedQuestions.entrySet()) {
+      if (!storedQuestion.getValue().equals(submittedQuestions.get(storedQuestion.getKey()))) {
+        return false;
+      }
     }
 
-    if (submittedQuestions.containsKey("secQuestion1")
-        && !submittedQuestions
-            .get("secQuestion1")
-            .equals(secQuestionStore.get(verifyUserId).get("secQuestion1"))) {
-      return false;
-    }
-
-    // else
     return true;
   }
 }

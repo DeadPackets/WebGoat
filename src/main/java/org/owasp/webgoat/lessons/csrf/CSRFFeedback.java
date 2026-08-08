@@ -9,17 +9,14 @@ import static org.owasp.webgoat.container.assignments.AttackResultBuilder.succes
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Map;
-import java.util.UUID;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
 import org.owasp.webgoat.container.assignments.AttackResult;
 import org.owasp.webgoat.container.session.LessonSession;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -54,14 +51,10 @@ public class CSRFFeedback implements AssignmentEndpoint {
     } catch (IOException e) {
       return failed(this).feedback(ExceptionUtils.getStackTrace(e)).build();
     }
-    boolean correctCSRF =
-        requestContainsWebGoatCookie(request.getCookies())
-            && request.getContentType().contains(MediaType.TEXT_PLAIN_VALUE);
-    correctCSRF &= hostOrRefererDifferentHost(request);
-    if (correctCSRF) {
-      String flag = UUID.randomUUID().toString();
-      userSessionData.setValue("csrf-feedback", flag);
-      return success(this).feedback("csrf-feedback-success").feedbackArgs(flag).build();
+    // feedback is only accepted from this application's own pages, so a cross-site post that rides
+    // the session cookie is rejected instead of being credited
+    if (hostOrRefererDifferentHost(request)) {
+      return failed(this).output("Rejected: this request did not originate from WebGoat.").build();
     }
     return failed(this).build();
   }
@@ -86,16 +79,6 @@ public class CSRFFeedback implements AssignmentEndpoint {
     }
   }
 
-  private boolean requestContainsWebGoatCookie(Cookie[] cookies) {
-    if (cookies != null) {
-      for (Cookie c : cookies) {
-        if (c.getName().equals("JSESSIONID")) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
 
   /*
    * Solution:
