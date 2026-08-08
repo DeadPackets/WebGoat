@@ -7,7 +7,7 @@ package org.owasp.webgoat.lessons.sqlinjection.introduction;
 import java.util.regex.Pattern;
 
 /**
- * Lessons 2 to 5 execute the statement the student types, so each one accepts only the single
+ * Lessons 3 to 5 execute the statement the student types, so each one accepts only the single
  * statement shape it teaches, against its own table. Chaining, comments, unions and sub-queries are
  * refused.
  */
@@ -17,11 +17,6 @@ final class LessonQueryGuard {
       Pattern.compile(";|--|/\\*|\\bunion\\b|\\binto\\b", Pattern.CASE_INSENSITIVE);
 
   private LessonQueryGuard() {}
-
-  static boolean isSelectFromEmployees(String query) {
-    return isSingleStatement(
-        query, "select\\s+[\\w*,.\\s]+\\s+from\\s+employees(\\s+where\\s+[^()]+)?");
-  }
 
   static boolean isUpdateOfEmployees(String query) {
     return isSingleStatement(query, "update\\s+employees\\s+set\\s+[^()]+");

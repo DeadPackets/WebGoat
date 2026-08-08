@@ -4,15 +4,8 @@
  */
 package org.owasp.webgoat.lessons.sqlinjection.introduction;
 
-import static java.sql.ResultSet.CONCUR_READ_ONLY;
-import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed;
-import static org.owasp.webgoat.container.assignments.AttackResultBuilder.success;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import org.owasp.webgoat.container.LessonDataSource;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
 import org.owasp.webgoat.container.assignments.AttackResult;
@@ -31,12 +24,6 @@ import org.springframework.web.bind.annotation.RestController;
     })
 public class SqlInjectionLesson2 implements AssignmentEndpoint {
 
-  private final LessonDataSource dataSource;
-
-  public SqlInjectionLesson2(LessonDataSource dataSource) {
-    this.dataSource = dataSource;
-  }
-
   @PostMapping("/SqlInjection/attack2")
   @ResponseBody
   public AttackResult completed(@RequestParam String query) {
@@ -44,31 +31,11 @@ public class SqlInjectionLesson2 implements AssignmentEndpoint {
   }
 
   protected AttackResult injectableQuery(String query) {
-    if (!LessonQueryGuard.isSelectFromEmployees(query)) {
-      return failed(this)
-          .feedback("sql-injection.2.failed")
-          .output("Only a single SELECT on the employees table is accepted here.")
-          .build();
-    }
-    try (var connection = dataSource.getConnection()) {
-      // a student-supplied statement runs on a read-only session, so it can never modify
-      // data, schema or permissions
-      connection.setReadOnly(true);
-      Statement statement = connection.createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY);
-      ResultSet results = statement.executeQuery(query);
-      StringBuilder output = new StringBuilder();
-
-      results.first();
-
-      if (results.getString("department").equals("Marketing")) {
-        output.append("<span class='feedback-positive'>" + query + "</span>");
-        output.append(SqlInjectionLesson8.generateTable(results));
-        return success(this).feedback("sql-injection.2.success").output(output.toString()).build();
-      } else {
-        return failed(this).feedback("sql-injection.2.failed").output(output.toString()).build();
-      }
-    } catch (SQLException sqle) {
-      return failed(this).feedback("sql-injection.2.failed").output(sqle.getMessage()).build();
-    }
+    // Restricting the shape of a read cannot make ad-hoc SQL safe, so the endpoint no longer
+    // runs a statement supplied by the client at all.
+    return failed(this)
+        .feedback("sql-injection.2.failed")
+        .output("Ad-hoc SQL is not executed here; the employees table is only read by bound queries.")
+        .build();
   }
 }
