@@ -4,9 +4,6 @@
  */
 package org.dummy.insecure.framework;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -41,7 +38,7 @@ public class VulnerableTaskHolder implements Serializable {
   }
 
   /**
-   * Execute a task when de-serializing a saved or received object.
+   * Restore a saved or received task.
    *
    * @author stupid develop
    */
@@ -61,20 +58,7 @@ public class VulnerableTaskHolder implements Serializable {
       throw new IllegalArgumentException("outdated");
     }
 
-    // condition is here to prevent you from destroying the goat altogether
-    if ((taskAction.startsWith("sleep") || taskAction.startsWith("ping"))
-        && taskAction.length() < 22) {
-      log.info("about to execute: {}", taskAction);
-      try {
-        Process p = Runtime.getRuntime().exec(taskAction);
-        BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        String line = null;
-        while ((line = in.readLine()) != null) {
-          log.info(line);
-        }
-      } catch (IOException e) {
-        log.error("IO Exception", e);
-      }
-    }
+    // Restoring an object must never run its payload, the action is only recorded.
+    log.info("task action: {}", taskAction);
   }
 }

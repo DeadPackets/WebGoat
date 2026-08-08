@@ -8,6 +8,9 @@ import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.success;
 
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.mapper.CannotResolveClassException;
+import com.thoughtworks.xstream.mapper.MapperWrapper;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
@@ -21,9 +24,27 @@ import org.springframework.web.bind.annotation.RestController;
 @AssignmentHints({"vulnerable.hint"})
 public class VulnerableComponentsLesson implements AssignmentEndpoint {
 
+  /** Element names and class attributes XStream is allowed to turn into a type. */
+  private static final Set<String> ALLOWED_TYPES =
+      Set.of("contact", ContactImpl.class.getName(), "string", "int", "null");
+
   @PostMapping("/VulnerableComponents/attack1")
   public @ResponseBody AttackResult completed(@RequestParam String payload) {
-    XStream xstream = new XStream();
+    XStream xstream =
+        new XStream() {
+          @Override
+          protected MapperWrapper wrapMapper(MapperWrapper next) {
+            return new MapperWrapper(next) {
+              @Override
+              public Class realClass(String elementName) {
+                if (!ALLOWED_TYPES.contains(elementName)) {
+                  throw new CannotResolveClassException(elementName);
+                }
+                return super.realClass(elementName);
+              }
+            };
+          }
+        };
     xstream.setClassLoader(Contact.class.getClassLoader());
     xstream.alias("contact", ContactImpl.class);
     xstream.ignoreUnknownElements();
