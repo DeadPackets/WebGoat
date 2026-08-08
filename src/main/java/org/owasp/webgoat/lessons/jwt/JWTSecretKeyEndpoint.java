@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
 import org.owasp.webgoat.container.assignments.AttackResult;
@@ -64,6 +65,9 @@ public class JWTSecretKeyEndpoint implements AssignmentEndpoint {
   @PostMapping("/JWT/secret")
   @ResponseBody
   public AttackResult login(@RequestParam String token) {
+    if (StringUtils.isEmpty(token)) {
+      return failed(this).feedback("jwt-invalid-token").build();
+    }
     try {
       Jwt jwt = Jwts.parser().setSigningKey(JWT_SECRET).parseClaimsJws(token);
       Claims claims = (Claims) jwt.getBody();

@@ -5,6 +5,7 @@
 package org.owasp.webgoat.lessons.passwordreset;
 
 import static java.util.Optional.ofNullable;
+import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed;
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.informationMessage;
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.success;
 
@@ -81,11 +82,12 @@ public class SecurityQuestionAssignment implements AssignmentEndpoint {
   @ResponseBody
   public AttackResult completed(@RequestParam String question) {
     var answer = ofNullable(questions.get(question));
-    if (answer.isPresent()) {
-      triedQuestions.incr(question);
-      if (triedQuestions.isComplete()) {
-        return success(this).output("<b>" + answer.get() + "</b>").build();
-      }
+    if (answer.isEmpty()) {
+      return failed(this).output("Unknown question, please try again...").build();
+    }
+    triedQuestions.incr(question);
+    if (triedQuestions.isComplete()) {
+      return success(this).output("<b>" + answer.get() + "</b>").build();
     }
     return informationMessage(this)
         .feedback("password-questions-one-successful")
