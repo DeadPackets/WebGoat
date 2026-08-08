@@ -7,6 +7,7 @@ package org.owasp.webgoat.lessons.insecurelogin;
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed;
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.success;
 
+import java.util.UUID;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AttackResult;
 import org.springframework.http.HttpStatus;
@@ -15,10 +16,13 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class InsecureLoginTask implements AssignmentEndpoint {
 
+  // the credential must not be a value published in this application's own source or assets
+  private static final String PASSWORD = UUID.randomUUID().toString();
+
   @PostMapping("/InsecureLogin/task")
   @ResponseBody
   public AttackResult completed(@RequestParam String username, @RequestParam String password) {
-    if ("CaptainJack".equals(username) && "BlackPearl".equals(password)) {
+    if ("CaptainJack".equals(username) && PASSWORD.equals(password)) {
       return success(this).build();
     }
     return failed(this).build();
