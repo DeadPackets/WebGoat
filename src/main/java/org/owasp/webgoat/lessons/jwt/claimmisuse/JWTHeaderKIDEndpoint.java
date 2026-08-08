@@ -68,14 +68,15 @@ public class JWTHeaderKIDEndpoint implements AssignmentEndpoint {
                       @Override
                       public byte[] resolveSigningKeyBytes(JwsHeader header, Claims claims) {
                         final String kid = (String) header.get("kid");
-                        try (var connection = dataSource.getConnection()) {
-                          ResultSet rs =
-                              connection
-                                  .createStatement()
-                                  .executeQuery(
-                                      "SELECT key FROM jwt_keys WHERE id = '" + kid + "'");
-                          while (rs.next()) {
-                            return TextCodec.BASE64.decode(rs.getString(1));
+                        try (var connection = dataSource.getConnection();
+                            var statement =
+                                connection.prepareStatement(
+                                    "SELECT key FROM jwt_keys WHERE id = ?")) {
+                          statement.setString(1, kid);
+                          try (ResultSet rs = statement.executeQuery()) {
+                            while (rs.next()) {
+                              return TextCodec.BASE64.decode(rs.getString(1));
+                            }
                           }
                         } catch (SQLException e) {
                           errorMessage[0] = e.getMessage();
@@ -97,7 +98,9 @@ public class JWTHeaderKIDEndpoint implements AssignmentEndpoint {
         } else {
           return failed(this).feedback("jwt-final-not-tom").build();
         }
-      } catch (JwtException e) {
+      } catch (JwtException | IllegalArgumentException e) {
+        // An unknown kid leaves the resolver without a key, jjwt reports that as an
+        // IllegalArgumentException.
         return failed(this).feedback("jwt-invalid-token").output(e.toString()).build();
       }
     }
