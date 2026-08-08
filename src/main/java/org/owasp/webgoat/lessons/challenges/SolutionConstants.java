@@ -4,8 +4,10 @@
  */
 package org.owasp.webgoat.lessons.challenges;
 
+import java.util.UUID;
+
 public interface SolutionConstants {
 
-  // TODO should be random generated when starting the server
-  String PASSWORD = "!!webgoat_admin_1234!!";
+  // the admin password must not be derivable from the repository
+  String PASSWORD = "!!webgoat_admin_" + UUID.randomUUID() + "_1234!!";
 }

@@ -14,6 +14,8 @@ import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +44,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class JWTRefreshEndpoint implements AssignmentEndpoint {
 
   public static final String PASSWORD = "bm5nhSkxCXZkKRy4";
-  private static final String JWT_PASSWORD = "bm5n3SkxCX4kKRy4";
+  // the signing key must not be readable in the source, or a token for Tom can just be minted
+  private static final String JWT_PASSWORD = randomSigningKey();
+
+  private static String randomSigningKey() {
+    var key = new byte[32];
+    new SecureRandom().nextBytes(key);
+    return Base64.getEncoder().encodeToString(key);
+  }
   private static final Map<String, String> refreshTokenOwners = new ConcurrentHashMap<>();
 
   @PostMapping(
