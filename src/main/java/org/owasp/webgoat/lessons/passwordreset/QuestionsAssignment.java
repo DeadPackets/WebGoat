@@ -9,6 +9,7 @@ import static org.owasp.webgoat.container.assignments.AttackResultBuilder.succes
 
 import java.util.HashMap;
 import java.util.Map;
+import org.owasp.webgoat.container.CurrentUsername;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AttackResult;
 import org.springframework.http.MediaType;
@@ -38,7 +39,8 @@ public class QuestionsAssignment implements AssignmentEndpoint {
       path = "/PasswordReset/questions",
       consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
   @ResponseBody
-  public AttackResult passwordReset(@RequestParam Map<String, Object> json) {
+  public AttackResult passwordReset(
+      @RequestParam Map<String, Object> json, @CurrentUsername String currentUsername) {
     String securityQuestion = (String) json.getOrDefault("securityQuestion", "");
     String username = (String) json.getOrDefault("username", "");
 
@@ -47,7 +49,8 @@ public class QuestionsAssignment implements AssignmentEndpoint {
     }
 
     String validAnswer = COLORS.get(username.toLowerCase());
-    if (validAnswer == null) {
+    // Answering for somebody else is indistinguishable from asking about an unknown user.
+    if (validAnswer == null || !username.equalsIgnoreCase(currentUsername)) {
       return failed(this)
           .feedback("password-questions-unknown-user")
           .feedbackArgs(username)

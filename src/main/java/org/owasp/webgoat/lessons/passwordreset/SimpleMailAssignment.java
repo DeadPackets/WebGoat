@@ -9,8 +9,11 @@ import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.informationMessage;
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.success;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import org.apache.commons.lang3.StringUtils;
+import java.util.HexFormat;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.owasp.webgoat.container.CurrentUsername;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AttackResult;
@@ -29,7 +32,10 @@ import org.springframework.web.client.RestTemplate;
  */
 @RestController
 public class SimpleMailAssignment implements AssignmentEndpoint {
+  private static final SecureRandom RANDOM = new SecureRandom();
+
   private final String webWolfURL;
+  private final Map<String, String> newPasswords = new ConcurrentHashMap<>();
   private RestTemplate restTemplate;
 
   public SimpleMailAssignment(
@@ -49,7 +55,8 @@ public class SimpleMailAssignment implements AssignmentEndpoint {
     String emailAddress = ofNullable(email).orElse("unknown@webgoat.org");
     String username = extractUsername(emailAddress);
 
-    if (username.equals(webGoatUsername) && StringUtils.reverse(username).equals(password)) {
+    String newPassword = newPasswords.get(webGoatUsername);
+    if (username.equals(webGoatUsername) && newPassword != null && newPassword.equals(password)) {
       return success(this).build();
     } else {
       return failed(this).feedbackArgs("password-reset-simple.password_incorrect").build();
@@ -66,6 +73,12 @@ public class SimpleMailAssignment implements AssignmentEndpoint {
     return sendEmail(extractUsername(email), email, username);
   }
 
+  private String createPassword() {
+    var password = new byte[8];
+    RANDOM.nextBytes(password);
+    return HexFormat.of().formatHex(password);
+  }
+
   private String extractUsername(String email) {
     int index = email.indexOf("@");
     return email.substring(0, index == -1 ? email.length() : index);
@@ -73,14 +86,14 @@ public class SimpleMailAssignment implements AssignmentEndpoint {
 
   private AttackResult sendEmail(String username, String email, String webGoatUsername) {
     if (username.equals(webGoatUsername)) {
+      String newPassword = createPassword();
+      newPasswords.put(username, newPassword);
       PasswordResetEmail mailEvent =
           PasswordResetEmail.builder()
               .recipient(username)
               .title("Simple e-mail assignment")
               .time(LocalDateTime.now())
-              .contents(
-                  "Thanks for resetting your password, your new password is: "
-                      + StringUtils.reverse(username))
+              .contents("Thanks for resetting your password, your new password is: " + newPassword)
               .sender("webgoat@owasp.org")
               .build();
       try {
