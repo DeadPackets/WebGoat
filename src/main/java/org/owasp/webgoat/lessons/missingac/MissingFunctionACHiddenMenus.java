@@ -7,6 +7,7 @@ package org.owasp.webgoat.lessons.missingac;
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed;
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.success;
 
+import org.owasp.webgoat.container.CurrentUsername;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
 import org.owasp.webgoat.container.assignments.AttackResult;
@@ -23,11 +24,24 @@ import org.springframework.web.bind.annotation.RestController;
 })
 public class MissingFunctionACHiddenMenus implements AssignmentEndpoint {
 
+  private final MissingAccessControlUserRepository userRepository;
+
+  public MissingFunctionACHiddenMenus(MissingAccessControlUserRepository userRepository) {
+    this.userRepository = userRepository;
+  }
+
   @PostMapping(
       path = "/access-control/hidden-menu",
       produces = {"application/json"})
   @ResponseBody
-  public AttackResult completed(String hiddenMenu1, String hiddenMenu2) {
+  public AttackResult completed(
+      String hiddenMenu1, String hiddenMenu2, @CurrentUsername String username) {
+    var currentUser = userRepository.findByUsername(username);
+    if (currentUser == null || !currentUser.isAdmin()) {
+      // the admin menu is server side authorization, non admin users are not told what it holds
+      return failed(this).feedback("access-control.hidden-menus.failure").output("").build();
+    }
+
     if (hiddenMenu1.equals("Users") && hiddenMenu2.equals("Config")) {
       return success(this).output("").feedback("access-control.hidden-menus.success").build();
     }

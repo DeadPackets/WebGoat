@@ -51,7 +51,11 @@ public class MissingFunctionACUsers {
       path = {"access-control/users"},
       consumes = "application/json")
   @ResponseBody
-  public ResponseEntity<List<DisplayUser>> usersService() {
+  public ResponseEntity<List<DisplayUser>> usersService(@CurrentUsername String username) {
+    var currentUser = userRepository.findByUsername(username);
+    if (currentUser == null || !currentUser.isAdmin()) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
     return ResponseEntity.ok(
         userRepository.findAllUsers().stream()
             .map(user -> new DisplayUser(user, PASSWORD_SALT_SIMPLE))
@@ -78,8 +82,13 @@ public class MissingFunctionACUsers {
       consumes = "application/json",
       produces = "application/json")
   @ResponseBody
-  public User addUser(@RequestBody User newUser) {
+  public User addUser(@RequestBody User newUser, @CurrentUsername String username) {
     try {
+      var currentUser = userRepository.findByUsername(username);
+      // the admin flag is not the registering user's to set, only an admin can grant it
+      if (newUser.isAdmin() && (currentUser == null || !currentUser.isAdmin())) {
+        newUser.setAdmin(false);
+      }
       userRepository.save(newUser);
       return newUser;
     } catch (Exception ex) {

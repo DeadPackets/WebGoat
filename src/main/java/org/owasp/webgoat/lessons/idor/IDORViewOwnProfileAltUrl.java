@@ -38,10 +38,12 @@ public class IDORViewOwnProfileAltUrl implements AssignmentEndpoint {
         String authUserId = (String) userSessionData.getValue("idor-authenticated-user-id");
         // don't care about http://localhost:8080 ... just want WebGoat/
         String[] urlParts = url.split("/");
-        if (urlParts[0].equals("WebGoat")
+        // the own profile is resolved from the session, a path carrying a user id is a direct
+        // object reference and no longer routes to a profile
+        if (urlParts.length == 3
+            && urlParts[0].equals("WebGoat")
             && urlParts[1].equals("IDOR")
-            && urlParts[2].equals("profile")
-            && urlParts[3].equals(authUserId)) {
+            && (urlParts[2].equals("own") || urlParts[2].equals("profile"))) {
           UserProfile userProfile = new UserProfile(authUserId);
           return success(this)
               .feedback("idor.view.own.profile.success")
