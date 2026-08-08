@@ -19,10 +19,16 @@ import org.springframework.web.bind.annotation.RestController;
 @AssignmentHints({"crypto-encoding-xor.hints.1"})
 public class XOREncodingAssignment implements AssignmentEndpoint {
 
+  private final XorEncodedPassword xorEncodedPassword;
+
+  public XOREncodingAssignment(XorEncodedPassword xorEncodedPassword) {
+    this.xorEncodedPassword = xorEncodedPassword;
+  }
+
   @PostMapping("/crypto/encoding/xor")
   @ResponseBody
   public AttackResult completed(@RequestParam String answer_pwd1) {
-    if (answer_pwd1 != null && answer_pwd1.equals("databasepassword")) {
+    if (answer_pwd1 != null && answer_pwd1.equals(xorEncodedPassword.getPassword())) {
       return success(this).feedback("crypto-encoding-xor.success").build();
     }
     return failed(this).feedback("crypto-encoding-xor.empty").build();
