@@ -37,7 +37,7 @@ public class IDORViewOwnProfile {
         details.put("name", userProfile.getName());
         details.put("color", userProfile.getColor());
         details.put("size", userProfile.getSize());
-        details.put("role", userProfile.getRole());
+        // the role is authorization data, it is not part of the profile handed to the client
       } else {
         details.put(
             "error",
