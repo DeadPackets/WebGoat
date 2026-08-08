@@ -106,7 +106,7 @@ public class JWTRefreshEndpoint implements AssignmentEndpoint {
       return ok(failed(this).feedback("jwt-refresh-not-tom").feedbackArgs(user).build());
     } catch (ExpiredJwtException e) {
       return ok(failed(this).output(e.getMessage()).build());
-    } catch (JwtException e) {
+    } catch (JwtException | IllegalArgumentException e) {
       return ok(failed(this).feedback("jwt-invalid-token").build());
     }
   }
@@ -130,7 +130,7 @@ public class JWTRefreshEndpoint implements AssignmentEndpoint {
     } catch (ExpiredJwtException e) {
       user = (String) e.getClaims().get("user");
       refreshToken = (String) json.get("refresh_token");
-    } catch (JwtException e) {
+    } catch (JwtException | IllegalArgumentException e) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
