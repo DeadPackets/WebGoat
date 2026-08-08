@@ -54,7 +54,7 @@ public class HashingAssignment implements AssignmentEndpoint {
     if (sha256 == null) {
       String secret = SECRETS[new Random().nextInt(SECRETS.length)];
       sha256 = getHash(secret, "SHA-256");
-      request.getSession().setAttribute("sha256Hash", sha256);
+      request.getSession().setAttribute("sha256", sha256);
       request.getSession().setAttribute("sha256Secret", secret);
     }
     return sha256;

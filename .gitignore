@@ -48,6 +48,7 @@ webgoat-lessons/vulnerable-components/dependency-reduced-pom.xml
 **/.factorypath
 /.sonatype
 **/bin/*
+create.sql
 webgoat.lck
 webgoat.log
 webgoat.properties

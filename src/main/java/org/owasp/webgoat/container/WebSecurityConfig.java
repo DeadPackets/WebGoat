@@ -18,6 +18,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /** Security configuration for WebGoat. */
 @Configuration
@@ -57,6 +58,7 @@ public class WebSecurityConfig {
               oidc.defaultSuccessUrl("/login-oauth.mvc");
               oidc.loginPage("/login");
             })
+        .addFilterBefore(new CrossOriginLoginFilter(), UsernamePasswordAuthenticationFilter.class)
         .logout(logout -> logout.deleteCookies("JSESSIONID").invalidateHttpSession(true))
         .csrf(csrf -> csrf.disable())
         .headers(headers -> headers.disable())
