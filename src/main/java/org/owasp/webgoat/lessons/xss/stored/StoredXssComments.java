@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.HtmlUtils;
 
 @RestController
 public class StoredXssComments implements AssignmentEndpoint {
@@ -67,7 +68,9 @@ public class StoredXssComments implements AssignmentEndpoint {
       allComments.addAll(newComments);
     }
     Collections.reverse(allComments);
-    return allComments;
+    return allComments.stream()
+        .map(c -> new Comment(c.getUser(), c.getDateTime(), escapeHtml(c.getText())))
+        .toList();
   }
 
   @PostMapping("/CrossSiteScriptingStored/stored-xss")
@@ -83,11 +86,16 @@ public class StoredXssComments implements AssignmentEndpoint {
     comments.add(comment);
     userComments.put(username, comments);
 
-    if (comment.getText().contains(phoneHomeString)) {
+    // The feed is entity encoded before it is rendered, so judge the attack on that same text.
+    if (escapeHtml(comment.getText()).contains(phoneHomeString)) {
       return (success(this).feedback("xss-stored-comment-success").build());
     } else {
       return (failed(this).feedback("xss-stored-comment-failure").build());
     }
+  }
+
+  private static String escapeHtml(String text) {
+    return text == null ? "" : HtmlUtils.htmlEscape(text);
   }
 
   private Comment parseJson(String comment) {
