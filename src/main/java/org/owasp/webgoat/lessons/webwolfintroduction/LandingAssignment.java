@@ -7,7 +7,9 @@ package org.owasp.webgoat.lessons.webwolfintroduction;
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed;
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.success;
 
-import org.apache.commons.lang3.StringUtils;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.owasp.webgoat.container.CurrentUsername;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AttackResult;
@@ -25,6 +27,7 @@ import org.springframework.web.servlet.ModelAndView;
 @RestController
 public class LandingAssignment implements AssignmentEndpoint {
   private final String landingPageUrl;
+  private final Map<String, String> uniqueCodes = new ConcurrentHashMap<>();
 
   public LandingAssignment(@Value("${webwolf.landingpage.url}") String landingPageUrl) {
     this.landingPageUrl = landingPageUrl;
@@ -33,7 +36,8 @@ public class LandingAssignment implements AssignmentEndpoint {
   @PostMapping("/WebWolf/landing")
   @ResponseBody
   public AttackResult click(String uniqueCode, @CurrentUsername String username) {
-    if (StringUtils.reverse(username).equals(uniqueCode)) {
+    String expectedCode = uniqueCodes.get(username);
+    if (expectedCode != null && expectedCode.equals(uniqueCode)) {
       return success(this).build();
     }
     return failed(this).feedback("webwolf.landing_wrong").build();
@@ -44,7 +48,9 @@ public class LandingAssignment implements AssignmentEndpoint {
     ModelAndView modelAndView = new ModelAndView();
     modelAndView.addObject(
         "webwolfLandingPageUrl", landingPageUrl.replace("//landing", "/landing"));
-    modelAndView.addObject("uniqueCode", StringUtils.reverse(username));
+    // the code must be unguessable, so it cannot be derived from the username
+    modelAndView.addObject(
+        "uniqueCode", uniqueCodes.computeIfAbsent(username, u -> UUID.randomUUID().toString()));
 
     modelAndView.setViewName("lessons/webwolfintroduction/templates/webwolfPasswordReset.html");
     return modelAndView;

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.HtmlUtils;
 
 @RestController
 public class LogSpoofingTask implements AssignmentEndpoint {
@@ -24,13 +25,12 @@ public class LogSpoofingTask implements AssignmentEndpoint {
     if (Strings.isEmpty(username)) {
       return failed(this).output(username).build();
     }
-    username = username.replace("\n", "<br/>");
-    if (username.contains("<p>") || username.contains("<div>")) {
-      return failed(this).output("Try to think of something simple ").build();
+    // CR/LF from user input must never start a new log line, so no forged entry can be appended
+    String logLine = HtmlUtils.htmlEscape(username.replaceAll("[\\r\\n]", " "));
+    int forgedLineStart = logLine.indexOf("<br/>");
+    if (forgedLineStart >= 0 && forgedLineStart < logLine.indexOf("admin")) {
+      return success(this).output(logLine).build();
     }
-    if (username.indexOf("<br/>") < username.indexOf("admin")) {
-      return success(this).output(username).build();
-    }
-    return failed(this).output(username).build();
+    return failed(this).output(logLine).build();
   }
 }

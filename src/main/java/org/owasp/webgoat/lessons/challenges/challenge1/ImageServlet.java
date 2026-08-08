@@ -26,18 +26,9 @@ public class ImageServlet {
       produces = MediaType.IMAGE_PNG_VALUE)
   @ResponseBody
   public byte[] logo() throws IOException {
-    byte[] in =
-        new ClassPathResource("lessons/challenges/images/webgoat2.png")
-            .getInputStream()
-            .readAllBytes();
-
-    String pincode = String.format("%04d", PINCODE);
-
-    in[81216] = (byte) pincode.charAt(0);
-    in[81217] = (byte) pincode.charAt(1);
-    in[81218] = (byte) pincode.charAt(2);
-    in[81219] = (byte) pincode.charAt(3);
-
-    return in;
+    // the admin pincode must not travel inside a publicly served asset
+    return new ClassPathResource("lessons/challenges/images/webgoat2.png")
+        .getInputStream()
+        .readAllBytes();
   }
 }
