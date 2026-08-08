@@ -46,10 +46,13 @@ public class SqlInjectionLesson5a implements AssignmentEndpoint {
     try (Connection connection = dataSource.getConnection()) {
       query =
           "SELECT * FROM user_data WHERE first_name = 'John' and last_name = '" + accountName + "'";
-      try (Statement statement =
-          connection.createStatement(
-              ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
-        ResultSet results = statement.executeQuery(query);
+      try (PreparedStatement statement =
+          connection.prepareStatement(
+              "SELECT * FROM user_data WHERE first_name = 'John' and last_name = ?",
+              ResultSet.TYPE_SCROLL_INSENSITIVE,
+              ResultSet.CONCUR_READ_ONLY)) {
+        statement.setString(1, accountName);
+        ResultSet results = statement.executeQuery();
 
         if ((results != null) && (results.first())) {
           ResultSetMetaData resultsMetaData = results.getMetaData();
