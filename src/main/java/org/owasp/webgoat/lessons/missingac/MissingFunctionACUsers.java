@@ -31,10 +31,16 @@ public class MissingFunctionACUsers {
   private final MissingAccessControlUserRepository userRepository;
 
   @GetMapping(path = {"access-control/users"})
-  public ModelAndView listUsers() {
+  public ModelAndView listUsers(@CurrentUsername String username) {
 
     ModelAndView model = new ModelAndView();
     model.setViewName("list_users");
+    var currentUser = userRepository.findByUsername(username);
+    if (currentUser == null || !currentUser.isAdmin()) {
+      model.addObject("numUsers", 0);
+      model.addObject("allUsers", new ArrayList<DisplayUser>());
+      return model;
+    }
     List<User> allUsers = userRepository.findAllUsers();
     model.addObject("numUsers", allUsers.size());
     // add display user objects in place of direct users
