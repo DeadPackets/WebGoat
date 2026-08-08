@@ -25,19 +25,24 @@ public class CSRFLogin implements AssignmentEndpoint {
       produces = {"application/json"})
   @ResponseBody
   public AttackResult completed(HttpServletRequest request, @CurrentUsername String username) {
-    final String host = request.getHeader("host");
-    final String referer = request.getHeader("referer");
-    // a request another site sent must not be credited; a request that names no origin at all is
-    // let through, since the header is not sent by every client
-    if (referer != null && host != null) {
-      final String[] refererArr = referer.split("/");
-      if (refererArr.length < 3 || !refererArr[2].equals(host)) {
-        return failed(this).feedback("csrf-login-failed").feedbackArgs(username).build();
-      }
+    // a login credited here must originate from one of WebGoat's own pages; a post that names no
+    // page of ours is treated as cross-site, matching the feedback assignment that already enforces
+    // this. Without it a session another site forged via login CSRF would be credited.
+    if (hostOrRefererDifferentHost(request)) {
+      return failed(this).feedback("csrf-login-failed").feedbackArgs(username).build();
     }
     if (username.startsWith("csrf")) {
       return success(this).feedback("csrf-login-success").build();
     }
     return failed(this).feedback("csrf-login-failed").feedbackArgs(username).build();
+  }
+
+  private boolean hostOrRefererDifferentHost(HttpServletRequest request) {
+    final String referer = request.getHeader("Referer");
+    final String host = request.getHeader("Host");
+    if (referer != null && host != null) {
+      return !referer.contains(host);
+    }
+    return true;
   }
 }
