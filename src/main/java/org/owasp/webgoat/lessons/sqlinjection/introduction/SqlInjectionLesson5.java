@@ -66,6 +66,9 @@ public class SqlInjectionLesson5 implements AssignmentEndpoint {
           .build();
     }
     try (Connection connection = dataSource.getConnection()) {
+      // a student-supplied statement runs on a read-only session, so it can never modify
+      // data, schema or permissions
+      connection.setReadOnly(true);
       try (Statement statement =
           connection.createStatement(
               ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
