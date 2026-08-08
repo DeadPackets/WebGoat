@@ -6,6 +6,7 @@ package org.owasp.webgoat.lessons.sqlinjection.mitigation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("SqlInjectionMitigations/servers")
 @Slf4j
 public class Servers {
+
+  // A column name cannot be bound as a parameter, so only known columns are accepted.
+  private static final Set<String> SORTABLE_COLUMNS =
+      Set.of("id", "hostname", "ip", "mac", "status", "description");
 
   private final LessonDataSource dataSource;
 
@@ -48,6 +53,10 @@ public class Servers {
   @ResponseBody
   public List<Server> sort(@RequestParam String column) throws Exception {
     List<Server> servers = new ArrayList<>();
+
+    if (!SORTABLE_COLUMNS.contains(column)) {
+      throw new IllegalArgumentException("Unknown column");
+    }
 
     try (var connection = dataSource.getConnection()) {
       try (var statement =
