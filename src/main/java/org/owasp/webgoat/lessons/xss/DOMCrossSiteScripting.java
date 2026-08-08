@@ -5,7 +5,6 @@
 package org.owasp.webgoat.lessons.xss;
 
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed;
-import static org.owasp.webgoat.container.assignments.AttackResultBuilder.success;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.security.SecureRandom;
@@ -35,10 +34,10 @@ public class DOMCrossSiteScripting implements AssignmentEndpoint {
 
     if (param1 == 42
         && param2 == 24
-        && request.getHeader("webgoat-requested-by").equals("dom-xss-vuln")) {
-      return success(this)
-          .output("phoneHome Response is " + lessonSession.getValue("randValue").toString())
-          .build();
+        && "dom-xss-vuln".equals(request.getHeader("webgoat-requested-by"))) {
+      // Any client can send this callback, so it does not prove injected script ran and it must
+      // not hand out the value the follow-up assignments are verified against.
+      return failed(this).output("phoneHome Response is received").build();
     } else {
       return failed(this).build();
     }
