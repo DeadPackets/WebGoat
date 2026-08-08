@@ -100,6 +100,10 @@ public class ProfileUploadRetrieval implements AssignmentEndpoint {
       var catPicture =
           new File(catPicturesDirectory, (id == null ? RandomUtils.nextInt(1, 11) : id) + ".jpg");
 
+      if (!isInsideCatPicturesDirectory(catPicture)) {
+        return ResponseEntity.badRequest()
+            .body("Illegal characters are not allowed in the query params");
+      }
       if (catPicture.getName().toLowerCase().contains("path-traversal-secret.jpg")) {
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType(MediaType.IMAGE_JPEG_VALUE))
@@ -121,5 +125,11 @@ public class ProfileUploadRetrieval implements AssignmentEndpoint {
     }
 
     return ResponseEntity.badRequest().build();
+  }
+
+  private boolean isInsideCatPicturesDirectory(File picture) throws IOException {
+    return picture
+        .getCanonicalPath()
+        .startsWith(catPicturesDirectory.getCanonicalPath() + File.separator);
   }
 }

@@ -49,6 +49,13 @@ public class ProfileUploadBase implements AssignmentEndpoint {
 
     try {
       var uploadedFile = new File(uploadDirectory, fullName);
+      if (!isInsideUploadDirectory(uploadDirectory, uploadedFile)) {
+        return failed(this)
+            .attemptWasMade()
+            .feedback("path-traversal-profile-attempt")
+            .feedbackArgs(uploadedFile.getCanonicalPath())
+            .build();
+      }
       uploadedFile.createNewFile();
       FileCopyUtils.copy(file.getBytes(), uploadedFile);
 
@@ -73,6 +80,13 @@ public class ProfileUploadBase implements AssignmentEndpoint {
     }
     Files.createDirectories(uploadDirectory.toPath());
     return uploadDirectory;
+  }
+
+  private boolean isInsideUploadDirectory(File uploadDirectory, File uploadedFile)
+      throws IOException {
+    return uploadedFile
+        .getCanonicalPath()
+        .startsWith(uploadDirectory.getCanonicalPath() + File.separator);
   }
 
   private boolean attemptWasMade(File expectedUploadDirectory, File uploadedFile)
