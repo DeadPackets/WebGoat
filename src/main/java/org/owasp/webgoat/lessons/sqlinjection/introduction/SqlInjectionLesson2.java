@@ -44,6 +44,12 @@ public class SqlInjectionLesson2 implements AssignmentEndpoint {
   }
 
   protected AttackResult injectableQuery(String query) {
+    if (!LessonQueryGuard.isSelectFromEmployees(query)) {
+      return failed(this)
+          .feedback("sql-injection.2.failed")
+          .output("Only a single SELECT on the employees table is accepted here.")
+          .build();
+    }
     try (var connection = dataSource.getConnection()) {
       Statement statement = connection.createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY);
       ResultSet results = statement.executeQuery(query);

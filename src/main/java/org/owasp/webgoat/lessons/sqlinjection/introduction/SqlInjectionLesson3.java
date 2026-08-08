@@ -39,6 +39,11 @@ public class SqlInjectionLesson3 implements AssignmentEndpoint {
   }
 
   protected AttackResult injectableQuery(String query) {
+    if (!LessonQueryGuard.isUpdateOfEmployees(query)) {
+      return failed(this)
+          .output("Only a single UPDATE on the employees table is accepted here.")
+          .build();
+    }
     try (Connection connection = dataSource.getConnection()) {
       try (Statement statement =
           connection.createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY)) {
