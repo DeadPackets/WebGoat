@@ -69,7 +69,7 @@ public class StoredXssComments implements AssignmentEndpoint {
     }
     Collections.reverse(allComments);
     return allComments.stream()
-        .map(c -> new Comment(c.getUser(), c.getDateTime(), escapeHtml(c.getText())))
+        .map(c -> new Comment(escapeHtml(c.getUser()), c.getDateTime(), escapeHtml(c.getText())))
         .toList();
   }
 

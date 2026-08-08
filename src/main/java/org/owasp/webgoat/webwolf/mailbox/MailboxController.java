@@ -45,7 +45,9 @@ public class MailboxController {
 
   @DeleteMapping("/mail")
   @ResponseStatus(HttpStatus.ACCEPTED)
-  public void deleteAllMail() {
-    mailboxRepository.deleteAll();
+  public void deleteAllMail(Authentication authentication) {
+    // a caller may only empty their own mailbox, never everyone else's
+    mailboxRepository.deleteAll(
+        mailboxRepository.findByRecipientOrderByTimeDesc(authentication.getName()));
   }
 }
