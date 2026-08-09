@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.owasp.webgoat.container.session.LessonSession;
 
 @RestController
 public class CrossSiteScriptingQuiz implements AssignmentEndpoint {
@@ -22,7 +23,14 @@ public class CrossSiteScriptingQuiz implements AssignmentEndpoint {
   private static final String[] solutions = {
     "Solution 4", "Solution 3", "Solution 1", "Solution 2", "Solution 4"
   };
-  boolean[] guesses = new boolean[solutions.length];
+
+  private static final String GUESSES = "CrossSiteScriptingQuiz.guesses";
+
+  private final LessonSession lessonSession;
+
+  public CrossSiteScriptingQuiz(LessonSession lessonSession) {
+    this.lessonSession = lessonSession;
+  }
 
   @PostMapping("/CrossSiteScripting/quiz")
   @ResponseBody
@@ -43,6 +51,7 @@ public class CrossSiteScriptingQuiz implements AssignmentEndpoint {
       chosen(question_4_solution)
     };
 
+    boolean[] guesses = new boolean[solutions.length];
     for (int i = 0; i < solutions.length; i++) {
       if (givenAnswers[i].startsWith(solutions[i] + ":")) {
         // answer correct
@@ -53,6 +62,8 @@ public class CrossSiteScriptingQuiz implements AssignmentEndpoint {
         guesses[i] = false;
       }
     }
+
+    lessonSession.setValue(GUESSES, guesses);
 
     if (correctAnswers == solutions.length) {
       return success(this).build();
@@ -70,6 +81,9 @@ public class CrossSiteScriptingQuiz implements AssignmentEndpoint {
   @GetMapping("/CrossSiteScripting/quiz")
   @ResponseBody
   public boolean[] getResults() {
-    return this.guesses;
+    // the answer sheet belongs to one user: a field on this singleton handed the
+    // last submitter's results to everyone
+    var guesses = (boolean[]) lessonSession.getValue(GUESSES);
+    return guesses == null ? new boolean[solutions.length] : guesses;
   }
 }

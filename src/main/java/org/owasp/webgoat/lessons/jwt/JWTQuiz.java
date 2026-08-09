@@ -14,12 +14,20 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.owasp.webgoat.container.session.LessonSession;
 
 @RestController
 public class JWTQuiz implements AssignmentEndpoint {
 
   private final String[] solutions = {"Solution 1", "Solution 2"};
-  private final boolean[] guesses = new boolean[solutions.length];
+
+  private static final String GUESSES = "JWTQuiz.guesses";
+
+  private final LessonSession lessonSession;
+
+  public JWTQuiz(LessonSession lessonSession) {
+    this.lessonSession = lessonSession;
+  }
 
   @PostMapping("/JWT/quiz")
   @ResponseBody
@@ -29,6 +37,7 @@ public class JWTQuiz implements AssignmentEndpoint {
 
     String[] givenAnswers = {chosen(question_0_solution), chosen(question_1_solution)};
 
+    boolean[] guesses = new boolean[solutions.length];
     for (int i = 0; i < solutions.length; i++) {
       if (givenAnswers[i].startsWith(solutions[i] + ":")) {
         // answer correct
@@ -39,6 +48,8 @@ public class JWTQuiz implements AssignmentEndpoint {
         guesses[i] = false;
       }
     }
+
+    lessonSession.setValue(GUESSES, guesses);
 
     if (correctAnswers == solutions.length) {
       return success(this).build();
@@ -56,6 +67,9 @@ public class JWTQuiz implements AssignmentEndpoint {
   @GetMapping("/JWT/quiz")
   @ResponseBody
   public boolean[] getResults() {
-    return this.guesses;
+    // the answer sheet belongs to one user: a field on this singleton handed the
+    // last submitter's results to everyone
+    var guesses = (boolean[]) lessonSession.getValue(GUESSES);
+    return guesses == null ? new boolean[solutions.length] : guesses;
   }
 }

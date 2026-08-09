@@ -14,12 +14,20 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.owasp.webgoat.container.session.LessonSession;
 
 @RestController
 public class CIAQuiz implements AssignmentEndpoint {
 
   private final String[] solutions = {"Solution 3", "Solution 1", "Solution 4", "Solution 2"};
-  boolean[] guesses = new boolean[solutions.length];
+
+  private static final String GUESSES = "CIAQuiz.guesses";
+
+  private final LessonSession lessonSession;
+
+  public CIAQuiz(LessonSession lessonSession) {
+    this.lessonSession = lessonSession;
+  }
 
   @PostMapping("/cia/quiz")
   @ResponseBody
@@ -37,6 +45,7 @@ public class CIAQuiz implements AssignmentEndpoint {
       chosen(question_3_solution)
     };
 
+    boolean[] guesses = new boolean[solutions.length];
     for (int i = 0; i < solutions.length; i++) {
       if (givenAnswers[i].startsWith(solutions[i] + ":")) {
         // answer correct
@@ -47,6 +56,8 @@ public class CIAQuiz implements AssignmentEndpoint {
         guesses[i] = false;
       }
     }
+
+    lessonSession.setValue(GUESSES, guesses);
 
     if (correctAnswers == solutions.length) {
       return success(this).build();
@@ -64,6 +75,9 @@ public class CIAQuiz implements AssignmentEndpoint {
   @GetMapping("/cia/quiz")
   @ResponseBody
   public boolean[] getResults() {
-    return this.guesses;
+    // the answer sheet belongs to one user: a field on this singleton handed the
+    // last submitter's results to everyone
+    var guesses = (boolean[]) lessonSession.getValue(GUESSES);
+    return guesses == null ? new boolean[solutions.length] : guesses;
   }
 }

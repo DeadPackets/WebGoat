@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.owasp.webgoat.container.session.LessonSession;
 
 /**
  * add a question: 1. Append new question to JSON string 2. add right solution to solutions array 3.
@@ -25,7 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class SqlInjectionQuiz implements AssignmentEndpoint {
 
   String[] solutions = {"Solution 4", "Solution 3", "Solution 2", "Solution 3", "Solution 4"};
-  boolean[] guesses = new boolean[solutions.length];
+
+  private static final String GUESSES = "SqlInjectionQuiz.guesses";
+
+  private final LessonSession lessonSession;
+
+  public SqlInjectionQuiz(LessonSession lessonSession) {
+    this.lessonSession = lessonSession;
+  }
 
   @PostMapping("/SqlInjectionAdvanced/quiz")
   @ResponseBody
@@ -46,6 +54,7 @@ public class SqlInjectionQuiz implements AssignmentEndpoint {
       chosen(question_4_solution)
     };
 
+    boolean[] guesses = new boolean[solutions.length];
     for (int i = 0; i < solutions.length; i++) {
       if (givenAnswers[i].startsWith(solutions[i] + ":")) {
         // answer correct
@@ -56,6 +65,8 @@ public class SqlInjectionQuiz implements AssignmentEndpoint {
         guesses[i] = false;
       }
     }
+
+    lessonSession.setValue(GUESSES, guesses);
 
     if (correctAnswers == solutions.length) {
       return success(this).build();
@@ -73,6 +84,9 @@ public class SqlInjectionQuiz implements AssignmentEndpoint {
   @GetMapping("/SqlInjectionAdvanced/quiz")
   @ResponseBody
   public boolean[] getResults() {
-    return this.guesses;
+    // the answer sheet belongs to one user: a field on this singleton handed the
+    // last submitter's results to everyone
+    var guesses = (boolean[]) lessonSession.getValue(GUESSES);
+    return guesses == null ? new boolean[solutions.length] : guesses;
   }
 }
