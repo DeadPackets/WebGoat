@@ -25,8 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @AssignmentHints({"crypto-hashing.hints.1", "crypto-hashing.hints.2"})
 public class HashingAssignment implements AssignmentEndpoint {
-  // No longer used to draw a secret: a word list in the source reverses an unsalted digest by
-  // lookup. Retained because CryptoIntegrationTest compiles against it.
+  // The exercise is to recover these from the digests below, so they have to stay guessable.
   public static final String[] SECRETS = {"secret", "admin", "password", "123456", "passw0rd"};
 
   private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -38,7 +37,7 @@ public class HashingAssignment implements AssignmentEndpoint {
     String md5Hash = (String) request.getSession().getAttribute("md5Hash");
     if (md5Hash == null) {
 
-      String secret = randomSecret();
+      String secret = dictionarySecret();
 
       MessageDigest md = MessageDigest.getInstance("MD5");
       md.update(secret.getBytes());
@@ -56,7 +55,7 @@ public class HashingAssignment implements AssignmentEndpoint {
 
     String sha256 = (String) request.getSession().getAttribute("sha256");
     if (sha256 == null) {
-      String secret = randomSecret();
+      String secret = dictionarySecret();
       sha256 = getHash(secret, "SHA-256");
       request.getSession().setAttribute("sha256", sha256);
       request.getSession().setAttribute("sha256Secret", secret);
@@ -82,6 +81,10 @@ public class HashingAssignment implements AssignmentEndpoint {
       }
     }
     return failed(this).feedback("crypto-hashing.empty").build();
+  }
+
+  private static String dictionarySecret() {
+    return SECRETS[new SecureRandom().nextInt(SECRETS.length)];
   }
 
   static String randomSecret() {
