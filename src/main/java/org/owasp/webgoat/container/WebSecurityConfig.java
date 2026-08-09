@@ -20,6 +20,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 /** Security configuration for WebGoat. */
 @Configuration
@@ -31,6 +34,9 @@ public class WebSecurityConfig {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    var csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+    csrfTokenRepository.setCookieCustomizer(cookie -> cookie.sameSite("Strict"));
+
     return http.authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(
@@ -42,6 +48,7 @@ public class WebSecurityConfig {
                         "/plugins/**",
                         "/registration",
                         "/register.mvc",
+                        "/csrf/token",
                         "/actuator/health")
                     .permitAll()
                     .anyRequest()
@@ -61,7 +68,13 @@ public class WebSecurityConfig {
             })
         .addFilterBefore(new CrossOriginLoginFilter(), UsernamePasswordAuthenticationFilter.class)
         .logout(logout -> logout.deleteCookies("JSESSIONID").invalidateHttpSession(true))
-        .csrf(csrf -> csrf.disable())
+        .csrf(
+            csrf ->
+                csrf.csrfTokenRepository(csrfTokenRepository)
+                    .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                    .ignoringRequestMatchers(
+                        new TokenlessAuthenticationMatcher("/login", "/register.mvc")))
+        .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
         // Framing is kept for the application's own pages, which some uploads still rely on, but
         // no other site may frame WebGoat and pass its clicks off as the user's own.
         .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))

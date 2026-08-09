@@ -6,6 +6,8 @@ package org.owasp.webgoat.webwolf;
 
 import lombok.AllArgsConstructor;
 import org.owasp.webgoat.container.AjaxAuthenticationEntryPoint;
+import org.owasp.webgoat.container.CsrfCookieFilter;
+import org.owasp.webgoat.container.TokenlessAuthenticationMatcher;
 import org.owasp.webgoat.webwolf.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -20,6 +22,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 /** Security configuration for WebWolf. */
 @Configuration
@@ -31,10 +36,14 @@ public class WebSecurityConfig {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    var csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+    csrfTokenRepository.setCookieCustomizer(cookie -> cookie.sameSite("Strict"));
+
     return http.authorizeHttpRequests(
             auth -> {
               auth.requestMatchers("/css/**", "/webjars/**", "/favicon.ico", "/js/**", "/images/**")
                   .permitAll();
+              auth.requestMatchers("/csrf/token").permitAll();
               auth.requestMatchers(
                       HttpMethod.GET,
                       "/fileupload/**",
@@ -45,7 +54,15 @@ public class WebSecurityConfig {
               auth.requestMatchers(HttpMethod.POST, "/files", "/mail", "/requests").permitAll();
               auth.anyRequest().authenticated();
             })
-        .csrf(csrf -> csrf.disable())
+        .csrf(
+            csrf ->
+                csrf.csrfTokenRepository(csrfTokenRepository)
+                    .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                    .ignoringRequestMatchers(new TokenlessAuthenticationMatcher("/login"))
+                    // WebGoat delivers lesson mail over this endpoint from the server, that call
+                    // carries no browser session which could be ridden.
+                    .ignoringRequestMatchers("/mail"))
+        .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
         .formLogin(
             login ->
                 login
