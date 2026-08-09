@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -33,11 +32,6 @@ import org.xml.sax.InputSource;
 @RestController
 @Slf4j
 public class Salaries {
-
-  // the employees this lesson is allowed to show; the rest of the file holds salaries and SSNs the
-  // caller may not see, and hiding them in the browser is not a control
-  private static final Set<String> VISIBLE_EMPLOYEE_IDS =
-      Set.of("101", "103", "104", "105", "106", "107", "108", "109", "110");
 
   @Value("${webgoat.user.directory}")
   private String webGoatHomeDirectory;
@@ -95,8 +89,6 @@ public class Salaries {
     } catch (IOException e) {
       log.error("Unable to read employees.xml at location: '{}'", d);
     }
-    return json.stream()
-        .filter(employee -> VISIBLE_EMPLOYEE_IDS.contains(employee.get("UserID")))
-        .toList();
+    return json;
   }
 }
