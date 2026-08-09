@@ -12,6 +12,8 @@ import org.owasp.webgoat.container.lessons.Initializable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -27,6 +29,9 @@ public class UserService implements UserDetailsService {
   private final JdbcTemplate jdbcTemplate;
   private final Function<String, Flyway> flywayLessons;
   private final List<Initializable> lessonInitializables;
+  // Initialized here, not injected: Lombok skips initialized final fields, so the generated
+  // constructor keeps its signature.
+  private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
   @Override
   public WebGoatUser loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -44,7 +49,8 @@ public class UserService implements UserDetailsService {
   public void addUser(String username, String password) {
     // get user if there exists one by the name
     var userAlreadyExists = userRepository.existsByUsername(username);
-    var webGoatUser = userRepository.save(new WebGoatUser(username, password));
+    var webGoatUser =
+        userRepository.save(new WebGoatUser(username, passwordEncoder.encode(password)));
 
     if (!userAlreadyExists) {
       userTrackerRepository.save(
