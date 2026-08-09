@@ -34,23 +34,19 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class SigningAssignment implements AssignmentEndpoint {
 
-  /*
-   * The key pair is generated per session and only the public part of it ever leaves the server.
-   * Handing out the private key would allow anyone to sign data on behalf of this application.
-   */
   @RequestMapping(path = "/crypto/signing/getprivate", produces = MediaType.TEXT_HTML_VALUE)
   @ResponseBody
-  public String getPublicKey(HttpServletRequest request)
+  public String getPrivateKey(HttpServletRequest request)
       throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
 
-    String publicKey = (String) request.getSession().getAttribute("publicKeyString");
-    if (publicKey == null) {
+    String privateKey = (String) request.getSession().getAttribute("privateKeyString");
+    if (privateKey == null) {
       KeyPair keyPair = CryptoUtil.generateKeyPair();
-      publicKey = CryptoUtil.getPublicKeyInPEM(keyPair);
-      request.getSession().setAttribute("publicKeyString", publicKey);
+      privateKey = CryptoUtil.getPrivateKeyInPEM(keyPair);
+      request.getSession().setAttribute("privateKeyString", privateKey);
       request.getSession().setAttribute("keyPair", keyPair);
     }
-    return publicKey;
+    return privateKey;
   }
 
   @PostMapping("/crypto/signing/verify")
