@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import lombok.extern.slf4j.Slf4j;
 import org.owasp.webgoat.container.LessonDataSource;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AttackResult;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 public class SqlInjectionLesson6b implements AssignmentEndpoint {
   private final LessonDataSource dataSource;
@@ -38,27 +40,22 @@ public class SqlInjectionLesson6b implements AssignmentEndpoint {
     }
   }
 
+  // A failed lookup used to fall through to the seeded default "dave", which is also the account
+  // name printed on the lesson page, so any database fault handed out the answer. No password
+  // means the guess cannot be confirmed.
   protected String getPassword() {
-    String password = "dave";
     try (Connection connection = dataSource.getConnection()) {
       String query = "SELECT password FROM user_system_data WHERE user_name = 'dave'";
-      try {
-        Statement statement =
-            connection.createStatement(
-                ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-        ResultSet results = statement.executeQuery(query);
+      Statement statement =
+          connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+      ResultSet results = statement.executeQuery(query);
 
-        if (results != null && results.first()) {
-          password = results.getString("password");
-        }
-      } catch (SQLException sqle) {
-        sqle.printStackTrace();
-        // do nothing
+      if (results != null && results.first()) {
+        return results.getString("password");
       }
     } catch (Exception e) {
-      e.printStackTrace();
-      // do nothing
+      log.error("Unable to read the password for 'dave'", e);
     }
-    return (password);
+    return null;
   }
 }
