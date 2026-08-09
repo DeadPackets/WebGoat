@@ -27,12 +27,22 @@ public class CryptoUtil {
   public static KeyPair generateKeyPair()
       throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
     KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-    // Exponents below F4 (3, 5, 17, 257) expose RSA signatures to low-exponent forgery.
-    RSAKeyGenParameterSpec kpgSpec =
-        new RSAKeyGenParameterSpec(2048, RSAKeyGenParameterSpec.F4);
+    /* only the standard public exponent is used, small exponents weaken the key */
+    RSAKeyGenParameterSpec kpgSpec = new RSAKeyGenParameterSpec(2048, RSAKeyGenParameterSpec.F4);
     keyPairGenerator.initialize(kpgSpec);
-    // keyPairGenerator.initialize(2048);
     return keyPairGenerator.generateKeyPair();
+  }
+
+  public static String getPublicKeyInPEM(KeyPair keyPair) {
+    String encodedString = "-----BEGIN PUBLIC KEY-----\n";
+    encodedString =
+        encodedString
+            + new String(
+                Base64.getEncoder().encode(keyPair.getPublic().getEncoded()),
+                Charset.forName("UTF-8"))
+            + "\n";
+    encodedString = encodedString + "-----END PUBLIC KEY-----\n";
+    return encodedString;
   }
 
   public static String getPrivateKeyInPEM(KeyPair keyPair) {

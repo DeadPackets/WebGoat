@@ -42,22 +42,29 @@ public class IDOREditOtherProfile implements AssignmentEndpoint {
       @PathVariable("userId") String userId, @RequestBody UserProfile userSubmittedProfile) {
 
     String authUserId = (String) userSessionData.getValue("idor-authenticated-user-id");
-    if (authUserId == null || !authUserId.equals(userId)) {
-      // a profile is only editable by its owner, the id in the url or in the body is not an
-      // authorization decision
-      return failed(this).feedback("idor.edit.profile.failure3").build();
+    if (authUserId == null) {
+      return failed(this).feedback("idor.view.other.profile.failure1").build();
     }
 
-    // the profile is resolved from the session, the role is server owned and is never taken from
-    // the request
+    // Horizontal access control: the identifier in the path and the one in the submitted body are
+    // only accepted when they refer to the authenticated user, so another user's profile can not
+    // be reached from here.
+    if (!authUserId.equals(userId)
+        || (userSubmittedProfile.getUserId() != null
+            && !authUserId.equals(userSubmittedProfile.getUserId()))) {
+      return failed(this).feedback("idor.edit.profile.denied").build();
+    }
+
+    // The profile that is updated is always the one belonging to the session, and only the
+    // attributes a user owns are taken from the request. The role drives authorization decisions
+    // and is therefore never bound from client supplied data.
     UserProfile currentUserProfile = new UserProfile(authUserId);
-    currentUserProfile.setName(userSubmittedProfile.getName());
     currentUserProfile.setColor(userSubmittedProfile.getColor());
     currentUserProfile.setSize(userSubmittedProfile.getSize());
-    // we will persist in the session object for now in case we want to refer back or use it later
     userSessionData.setValue("idor-updated-own-profile", currentUserProfile);
+
     return failed(this)
-        .feedback("idor.edit.profile.failure4")
+        .feedback("idor.edit.profile.updated")
         .output(currentUserProfile.profileToMap().toString())
         .build();
   }

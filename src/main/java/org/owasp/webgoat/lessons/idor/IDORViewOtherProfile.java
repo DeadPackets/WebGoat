@@ -41,20 +41,23 @@ public class IDORViewOtherProfile implements AssignmentEndpoint {
   @ResponseBody
   public AttackResult completed(@PathVariable("userId") String userId) {
 
-    Object obj = userSessionData.getValue("idor-authenticated-as");
-    if (obj != null && obj.equals("tom")) {
-      // going to use session auth to view this one
-      String authUserId = (String) userSessionData.getValue("idor-authenticated-user-id");
-      if (userId == null || !userId.equals(authUserId)) {
-        // a profile is only served to its owner, the id in the url is not an authorization decision
-        return failed(this).feedback("idor.view.profile.close1").build();
-      }
-      UserProfile ownProfile = new UserProfile(authUserId);
-      return failed(this)
-          .feedback("idor.view.profile.close2")
-          .output(ownProfile.profileToMap().toString())
-          .build();
+    String authUserId = (String) userSessionData.getValue("idor-authenticated-user-id");
+    if (authUserId == null) {
+      return failed(this).feedback("idor.view.other.profile.failure1").build();
     }
-    return failed(this).build();
+
+    // Horizontal access control: an identifier taken from the request is only dereferenced when it
+    // belongs to the authenticated user. Walking or fuzzing the identifier therefore never
+    // discloses another user's profile, and the answer is the same whether or not the requested
+    // profile exists.
+    if (!authUserId.equals(userId)) {
+      return failed(this).feedback("idor.view.profile.denied").build();
+    }
+
+    UserProfile requestedProfile = new UserProfile(authUserId);
+    return failed(this)
+        .feedback("idor.view.profile.own")
+        .output(requestedProfile.profileToMap().toString())
+        .build();
   }
 }

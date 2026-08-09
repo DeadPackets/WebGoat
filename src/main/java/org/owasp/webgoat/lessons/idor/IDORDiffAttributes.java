@@ -5,7 +5,6 @@
 package org.owasp.webgoat.lessons.idor;
 
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed;
-import static org.owasp.webgoat.container.assignments.AttackResultBuilder.success;
 
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
@@ -28,15 +27,12 @@ public class IDORDiffAttributes implements AssignmentEndpoint {
   public AttackResult completed(@RequestParam String attributes) {
     attributes = attributes.trim();
     String[] diffAttribs = attributes.split(",");
-    if (attributes.isEmpty()) {
+    if (diffAttribs.length < 2) {
       return failed(this).feedback("idor.diff.attributes.missing").build();
     }
-    // the profile no longer returns the role, the id is the only attribute which is returned
-    // without being displayed
-    if (diffAttribs.length == 1 && diffAttribs[0].toLowerCase().trim().equals("userid")) {
-      return success(this).feedback("idor.diff.success").build();
-    } else {
-      return failed(this).feedback("idor.diff.failure").build();
-    }
+    // The profile representation that is handed to the client no longer carries attributes that
+    // are withheld from the page: the internal identifier and the authorization role stay on the
+    // server, so there is no undisclosed attribute left to report here.
+    return failed(this).feedback("idor.diff.no.hidden.attributes").build();
   }
 }
