@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
 import org.owasp.webgoat.container.assignments.AttackResult;
@@ -52,7 +51,16 @@ public class JWTRefreshEndpoint implements AssignmentEndpoint {
     new SecureRandom().nextBytes(key);
     return Base64.getEncoder().encodeToString(key);
   }
+
   private static final Map<String, String> refreshTokenOwners = new ConcurrentHashMap<>();
+
+  private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+  private static String randomRefreshToken() {
+    var token = new byte[24];
+    SECURE_RANDOM.nextBytes(token);
+    return Base64.getUrlEncoder().withoutPadding().encodeToString(token);
+  }
 
   @PostMapping(
       value = "/JWT/refresh/login",
@@ -81,7 +89,7 @@ public class JWTRefreshEndpoint implements AssignmentEndpoint {
             .signWith(io.jsonwebtoken.SignatureAlgorithm.HS512, JWT_PASSWORD)
             .compact();
     Map<String, Object> tokenJson = new HashMap<>();
-    String refreshToken = RandomStringUtils.randomAlphabetic(20);
+    String refreshToken = randomRefreshToken();
     refreshTokenOwners.put(refreshToken, user);
     tokenJson.put("access_token", token);
     tokenJson.put("refresh_token", refreshToken);
