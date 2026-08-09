@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @AssignmentHints(
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
       "SqlStringInjectionHint.8.4",
       "SqlStringInjectionHint.8.5"
     })
+@Slf4j
 public class SqlInjectionLesson8 implements AssignmentEndpoint {
 
   private final LessonDataSource dataSource;
@@ -142,7 +144,7 @@ public class SqlInjectionLesson8 implements AssignmentEndpoint {
       statement.setString(2, action);
       statement.executeUpdate();
     } catch (SQLException e) {
-      System.err.println(e.getMessage());
+      log.error("Unable to write the access log entry", e);
     }
   }
 }

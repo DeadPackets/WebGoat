@@ -7,6 +7,7 @@ package org.owasp.webgoat.lessons.ssrf;
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed;
 
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
 import org.owasp.webgoat.container.assignments.AttackResult;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @AssignmentHints({"ssrf.hint1", "ssrf.hint2"})
 public class SSRFTask1 implements AssignmentEndpoint {
@@ -42,7 +44,7 @@ public class SSRFTask1 implements AssignmentEndpoint {
         return failed(this).feedback("ssrf.failure").output(html.toString()).build();
       }
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error("Unable to build the SSRF response", e);
       return failed(this).output(e.getMessage()).build();
     }
   }

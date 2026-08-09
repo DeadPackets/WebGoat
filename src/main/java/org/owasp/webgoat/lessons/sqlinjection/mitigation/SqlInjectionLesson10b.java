@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @AssignmentHints(
@@ -37,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
       "SqlStringInjectionHint-mitigation-10b-4",
       "SqlStringInjectionHint-mitigation-10b-5"
     })
+@Slf4j
 public class SqlInjectionLesson10b implements AssignmentEndpoint {
 
   @PostMapping("/SqlInjectionMitigations/attack10b")
@@ -112,7 +114,7 @@ public class SqlInjectionLesson10b implements AssignmentEndpoint {
     try {
       javaFileObject = new JavaObjectFromString("TestClass.java", javaFileContents.toString());
     } catch (Exception exception) {
-      exception.printStackTrace();
+      log.error("Unable to build the source file for the submitted answer", exception);
     }
     return javaFileObject;
   }
