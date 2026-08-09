@@ -25,9 +25,8 @@ public class CSRFLogin implements AssignmentEndpoint {
       produces = {"application/json"})
   @ResponseBody
   public AttackResult completed(HttpServletRequest request, @CurrentUsername String username) {
-    // a login credited here must originate from one of WebGoat's own pages; a post that names no
-    // page of ours is treated as cross-site, matching the feedback assignment that already enforces
-    // this. Without it a session another site forged via login CSRF would be credited.
+    // a login is only credited to a post from one of WebGoat's own pages; otherwise a session
+    // another site forged through login CSRF would be credited
     if (hostOrRefererDifferentHost(request)) {
       return failed(this).feedback("csrf-login-failed").feedbackArgs(username).build();
     }

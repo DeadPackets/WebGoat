@@ -46,18 +46,16 @@ public class IDOREditOtherProfile implements AssignmentEndpoint {
       return failed(this).feedback("idor.view.other.profile.failure1").build();
     }
 
-    // Horizontal access control: the identifier in the path and the one in the submitted body are
-    // only accepted when they refer to the authenticated user, so another user's profile can not
-    // be reached from here.
+    // the identifier in the path and the one in the body are only accepted when they refer to
+    // the authenticated user, so another user's profile cannot be reached from here
     if (!authUserId.equals(userId)
         || (userSubmittedProfile.getUserId() != null
             && !authUserId.equals(userSubmittedProfile.getUserId()))) {
       return failed(this).feedback("idor.edit.profile.denied").build();
     }
 
-    // The profile that is updated is always the one belonging to the session, and only the
-    // attributes a user owns are taken from the request. The role drives authorization decisions
-    // and is therefore never bound from client supplied data.
+    // the role drives authorization decisions, so it is never bound from the request; only
+    // attributes a user owns are taken from it
     UserProfile currentUserProfile = new UserProfile(authUserId);
     currentUserProfile.setColor(userSubmittedProfile.getColor());
     currentUserProfile.setSize(userSubmittedProfile.getSize());

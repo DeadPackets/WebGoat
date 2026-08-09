@@ -46,10 +46,8 @@ public class IDORViewOtherProfile implements AssignmentEndpoint {
       return failed(this).feedback("idor.view.other.profile.failure1").build();
     }
 
-    // Horizontal access control: an identifier taken from the request is only dereferenced when it
-    // belongs to the authenticated user. Walking or fuzzing the identifier therefore never
-    // discloses another user's profile, and the answer is the same whether or not the requested
-    // profile exists.
+    // an identifier from the request is only dereferenced when it belongs to the authenticated
+    // user, and the answer is the same whether or not the requested profile exists
     if (!authUserId.equals(userId)) {
       return failed(this).feedback("idor.view.profile.denied").build();
     }

@@ -36,9 +36,8 @@ public class IDORViewOwnProfileAltUrl implements AssignmentEndpoint {
       return failed(this).feedback("idor.view.own.profile.failure2").build();
     }
 
-    // The profile is resolved from the authenticated session, never from the path that the client
-    // submitted. The submitted value is deliberately not compared against the internal identifier:
-    // doing so would turn this endpoint into an oracle that confirms guessed object references.
+    // the profile comes from the session, and the submitted value is deliberately not compared
+    // with the internal identifier, which would make this endpoint an object-reference oracle
     UserProfile userProfile = new UserProfile(authUserId);
     return failed(this)
         .feedback("idor.view.own.profile.direct")

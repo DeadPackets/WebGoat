@@ -10,7 +10,6 @@ import static org.owasp.webgoat.container.assignments.AttackResultBuilder.succes
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import lombok.extern.slf4j.Slf4j;
 import org.owasp.webgoat.container.LessonDataSource;
@@ -40,9 +39,8 @@ public class SqlInjectionLesson6b implements AssignmentEndpoint {
     }
   }
 
-  // A failed lookup used to fall through to the seeded default "dave", which is also the account
-  // name printed on the lesson page, so any database fault handed out the answer. No password
-  // means the guess cannot be confirmed.
+  // no fallback value: the seeded default is the account name printed on the lesson page, so a
+  // failed lookup would otherwise hand out the answer
   protected String getPassword() {
     try (Connection connection = dataSource.getConnection()) {
       String query = "SELECT password FROM user_system_data WHERE user_name = 'dave'";

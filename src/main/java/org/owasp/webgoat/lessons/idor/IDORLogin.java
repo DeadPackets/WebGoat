@@ -30,9 +30,8 @@ public class IDORLogin implements AssignmentEndpoint {
 
   private final Map<String, Map<String, String>> idorUserInfo = new HashMap<>();
 
-  // The account secret is not part of the source (and is therefore not part of the distribution
-  // either): it is drawn from SecureRandom when the application starts and only its salted digest
-  // is retained. Passwords are never kept in clear text and are compared in constant time.
+  // the account secret is not in the source: it is drawn from SecureRandom at startup and only
+  // its salted digest is retained
   private final byte[] passwordSalt = new byte[16];
   private final byte[] passwordDigest;
 

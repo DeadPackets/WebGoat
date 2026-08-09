@@ -79,9 +79,8 @@ public class SecurityQuestionAssignment implements AssignmentEndpoint {
   @PostMapping("/PasswordReset/SecurityQuestions")
   @ResponseBody
   public AttackResult completed(@RequestParam String question) {
-    // Selecting a security question is not a verification of the user, so this endpoint only
-    // explains why the chosen question is weak and never grants access. Unknown input is looked
-    // up safely and is never echoed back to the caller.
+    // choosing a security question does not verify the user, so this endpoint never grants
+    // access and never echoes the submitted value back
     var answer = ofNullable(questions.get(question));
     if (answer.isPresent()) {
       triedQuestions.incr(question);

@@ -5,7 +5,6 @@
 package org.owasp.webgoat.lessons.csrf;
 
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed;
-import static org.owasp.webgoat.container.assignments.AttackResultBuilder.success;
 import static org.springframework.http.MediaType.ALL_VALUE;
 
 import com.google.common.collect.Lists;

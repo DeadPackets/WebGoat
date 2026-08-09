@@ -30,9 +30,8 @@ public class IDORDiffAttributes implements AssignmentEndpoint {
     if (diffAttribs.length < 2) {
       return failed(this).feedback("idor.diff.attributes.missing").build();
     }
-    // The profile representation that is handed to the client no longer carries attributes that
-    // are withheld from the page: the internal identifier and the authorization role stay on the
-    // server, so there is no undisclosed attribute left to report here.
+    // the internal identifier and the authorization role stay on the server, so the client
+    // representation holds no undisclosed attribute left to report here
     return failed(this).feedback("idor.diff.no.hidden.attributes").build();
   }
 }
