@@ -5,6 +5,7 @@
 package org.owasp.webgoat.lessons.idor;
 
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed;
+import static org.owasp.webgoat.container.assignments.AttackResultBuilder.success;
 
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
@@ -36,12 +37,20 @@ public class IDORViewOwnProfileAltUrl implements AssignmentEndpoint {
       return failed(this).feedback("idor.view.own.profile.failure2").build();
     }
 
-    // the profile comes from the session, and the submitted value is deliberately not compared
-    // with the internal identifier, which would make this endpoint an object-reference oracle
-    UserProfile userProfile = new UserProfile(authUserId);
-    return failed(this)
-        .feedback("idor.view.own.profile.direct")
-        .output(userProfile.profileToMap().toString())
-        .build();
+    // only the caller's own profile is ever resolved here, so the submitted path can confirm the
+    // route but can never reference another user's object
+    String[] urlParts = url.split("/");
+    if (urlParts.length == 4
+        && urlParts[0].equals("WebGoat")
+        && urlParts[1].equals("IDOR")
+        && urlParts[2].equals("profile")
+        && urlParts[3].equals(authUserId)) {
+      UserProfile userProfile = new UserProfile(authUserId);
+      return success(this)
+          .feedback("idor.view.own.profile.success")
+          .output(userProfile.profileToMap().toString())
+          .build();
+    }
+    return failed(this).feedback("idor.view.own.profile.failure1").build();
   }
 }
