@@ -42,7 +42,7 @@ public class WebSecurityConfig {
                         "/plugins/**",
                         "/registration",
                         "/register.mvc",
-                        "/actuator/**")
+                        "/actuator/health")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
@@ -62,7 +62,9 @@ public class WebSecurityConfig {
         .addFilterBefore(new CrossOriginLoginFilter(), UsernamePasswordAuthenticationFilter.class)
         .logout(logout -> logout.deleteCookies("JSESSIONID").invalidateHttpSession(true))
         .csrf(csrf -> csrf.disable())
-        .headers(headers -> headers.disable())
+        // Framing is kept for the application's own pages, which some uploads still rely on, but
+        // no other site may frame WebGoat and pass its clicks off as the user's own.
+        .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
         .exceptionHandling(
             handling ->
                 handling.authenticationEntryPoint(new AjaxAuthenticationEntryPoint("/login")))
