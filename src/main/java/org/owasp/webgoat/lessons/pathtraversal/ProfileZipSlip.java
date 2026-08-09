@@ -9,7 +9,6 @@ import static org.owasp.webgoat.container.assignments.AttackResultBuilder.succes
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -20,6 +19,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.owasp.webgoat.container.CurrentUsername;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
 import org.owasp.webgoat.container.assignments.AttackResult;
@@ -69,16 +69,24 @@ public class ProfileZipSlip extends ProfileUploadBase {
     var currentImage = getProfilePictureAsBase64(username);
 
     try {
-      var uploadedZipFile = tmpZipDirectory.resolve(file.getOriginalFilename());
+      // the client names the upload, so only the last segment of that name is used
+      var uploadedZipFile =
+          tmpZipDirectory.resolve(FilenameUtils.getName(file.getOriginalFilename()));
       FileCopyUtils.copy(file.getBytes(), uploadedZipFile.toFile());
 
-      ZipFile zip = new ZipFile(uploadedZipFile.toFile());
-      Enumeration<? extends ZipEntry> entries = zip.entries();
-      while (entries.hasMoreElements()) {
-        ZipEntry e = entries.nextElement();
-        File f = new File(tmpZipDirectory.toFile(), e.getName());
-        InputStream is = zip.getInputStream(e);
-        Files.copy(is, f.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      var extractionDirectory = tmpZipDirectory.toRealPath();
+      try (ZipFile zip = new ZipFile(uploadedZipFile.toFile())) {
+        Enumeration<? extends ZipEntry> entries = zip.entries();
+        while (entries.hasMoreElements()) {
+          ZipEntry e = entries.nextElement();
+          var target = extractionDirectory.resolve(e.getName()).normalize();
+          // an entry names its own path, so it may not be written outside the extraction directory
+          if (!target.startsWith(extractionDirectory)) {
+            return failed(this).output("path-traversal-zip-slip.extracted").build();
+          }
+          InputStream is = zip.getInputStream(e);
+          Files.copy(is, target, StandardCopyOption.REPLACE_EXISTING);
+        }
       }
 
       return isSolved(currentImage, getProfilePictureAsBase64(username));

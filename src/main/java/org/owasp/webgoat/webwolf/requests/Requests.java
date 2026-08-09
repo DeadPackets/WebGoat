@@ -60,7 +60,8 @@ public class Requests {
     HttpExchange.Request req = t.getRequest();
     boolean allowed = true;
     /* do not show certain traces to other users in a classroom setup */
-    if (req.getUri().getPath().contains("/files") && !req.getUri().getPath().contains(username)) {
+    if (req.getUri().getPath().contains("/files")
+        && !username.equals(ownerOfFileRequest(req.getUri().getPath()))) {
       allowed = false;
     } else if (req.getUri().getPath().contains("/landing")
         && req.getUri().getQuery() != null
@@ -70,6 +71,17 @@ public class Requests {
     }
 
     return allowed;
+  }
+
+  private String ownerOfFileRequest(String path) {
+    // the owner is the segment directly after /files, not any name occurring elsewhere in the path
+    var segments = path.split("/");
+    for (int i = 0; i < segments.length - 1; i++) {
+      if ("files".equals(segments[i])) {
+        return segments[i + 1];
+      }
+    }
+    return null;
   }
 
   private String path(HttpExchange t) {
