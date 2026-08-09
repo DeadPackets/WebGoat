@@ -85,9 +85,11 @@ public class ContentTypeAssignment implements AssignmentEndpoint {
         OS.isFamilyMac() || OS.isFamilyUnix()
             ? DEFAULT_LINUX_DIRECTORIES
             : DEFAULT_WINDOWS_DIRECTORIES;
-    boolean success = false;
+    // A directory listing pulled in by an external entity carries every one of these names. Any
+    // one of them on its own is an ordinary word, so a comment reading "etc" used to pass.
+    boolean success = true;
     for (String directory : directoriesToCheck) {
-      success |= org.apache.commons.lang3.StringUtils.contains(comment.getText(), directory);
+      success &= org.apache.commons.lang3.StringUtils.contains(comment.getText(), directory);
     }
     return success;
   }
