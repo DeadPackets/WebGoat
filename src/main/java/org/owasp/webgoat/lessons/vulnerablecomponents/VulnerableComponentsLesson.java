@@ -70,7 +70,7 @@ public class VulnerableComponentsLesson implements AssignmentEndpoint {
         contact.getFirstName(); // trigger the example like
         // https://x-stream.github.io/CVE-2013-7285.html
       }
-      if (!(contact instanceof ContactImpl)) {
+      if (contact != null && !(contact instanceof ContactImpl)) {
         return success(this).feedback("vulnerable-components.success").build();
       }
     } catch (Exception e) {
