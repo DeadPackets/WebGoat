@@ -27,10 +27,10 @@ public class JWTQuiz implements AssignmentEndpoint {
       @RequestParam String[] question_0_solution, @RequestParam String[] question_1_solution) {
     int correctAnswers = 0;
 
-    String[] givenAnswers = {question_0_solution[0], question_1_solution[0]};
+    String[] givenAnswers = {chosen(question_0_solution), chosen(question_1_solution)};
 
     for (int i = 0; i < solutions.length; i++) {
-      if (givenAnswers[i].contains(solutions[i])) {
+      if (givenAnswers[i].startsWith(solutions[i] + ":")) {
         // answer correct
         correctAnswers++;
         guesses[i] = true;
@@ -45,6 +45,12 @@ public class JWTQuiz implements AssignmentEndpoint {
     } else {
       return failed(this).build();
     }
+  }
+
+  // The radio value is "Solution <n>: <text>", so an answer only counts for the question it was
+  // picked for. A substring test let one string listing every solution pass every question.
+  private static String chosen(String[] submitted) {
+    return submitted == null || submitted.length == 0 ? "" : submitted[0];
   }
 
   @GetMapping("/JWT/quiz")
