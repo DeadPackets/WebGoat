@@ -101,7 +101,9 @@ public class StoredXssComments implements AssignmentEndpoint {
   private Comment parseJson(String comment) {
     ObjectMapper mapper = new ObjectMapper();
     try {
-      return mapper.readValue(comment, Comment.class);
+      // a JSON body of "null" parses without error and yields null
+      Comment parsed = mapper.readValue(comment, Comment.class);
+      return parsed == null ? new Comment() : parsed;
     } catch (IOException e) {
       return new Comment();
     }

@@ -43,7 +43,8 @@ public class MailAssignment implements AssignmentEndpoint {
   @ResponseBody
   public AttackResult sendEmail(
       @RequestParam String email, @CurrentUsername String webGoatUsername) {
-    String username = email.substring(0, email.indexOf("@"));
+    int at = email.indexOf("@");
+    String username = at < 0 ? email : email.substring(0, at);
     if (username.equalsIgnoreCase(webGoatUsername)) {
       // the code must be unguessable, so it cannot be derived from the username
       String uniqueCode =

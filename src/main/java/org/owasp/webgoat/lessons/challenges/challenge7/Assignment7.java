@@ -90,7 +90,8 @@ public class Assignment7 implements AssignmentEndpoint {
   @ResponseBody
   public AttackResult sendPasswordResetLink(@RequestParam String email) {
     if (StringUtils.hasText(email)) {
-      String username = email.substring(0, email.indexOf("@"));
+      int at = email.indexOf("@");
+      String username = at < 0 ? email : email.substring(0, at);
       if (StringUtils.hasText(username)) {
         String resetLink =
             "admin".equalsIgnoreCase(username)
