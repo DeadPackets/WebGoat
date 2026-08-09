@@ -55,11 +55,22 @@ public class VerifyAccount implements AssignmentEndpoint {
     }
 
     // else
-    if (verificationHelper.verifyAccount(Integer.valueOf(userId), (HashMap) submittedAnswers)) {
+    Integer accountId = parseUserId(userId);
+    if (accountId != null
+        && verificationHelper.verifyAccount(accountId, (HashMap) submittedAnswers)) {
       userSessionData.setValue("account-verified-id", userId);
       return success(this).feedback("verify-account.success").build();
     } else {
       return failed(this).feedback("verify-account.failed").build();
+    }
+  }
+
+  // A user id that is not a number is a rejected attempt, not a server error with a stack trace.
+  private Integer parseUserId(String userId) {
+    try {
+      return Integer.valueOf(userId);
+    } catch (NumberFormatException e) {
+      return null;
     }
   }
 

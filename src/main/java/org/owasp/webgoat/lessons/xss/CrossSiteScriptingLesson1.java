@@ -21,7 +21,8 @@ public class CrossSiteScriptingLesson1 implements AssignmentEndpoint {
   @ResponseBody
   public AttackResult completed(
       @RequestParam(value = "checkboxAttack1", required = false) String checkboxValue) {
-    if (checkboxValue != null) {
+    // The box has to be ticked; the presence of the parameter alone said nothing about the answer.
+    if ("on".equals(checkboxValue)) {
       return success(this).build();
     } else {
       return failed(this).feedback("xss.lesson1.failure").build();

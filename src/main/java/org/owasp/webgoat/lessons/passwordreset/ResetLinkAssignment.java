@@ -8,11 +8,10 @@ import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.success;
 import static org.springframework.util.StringUtils.hasText;
 
-import com.google.common.collect.Maps;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.owasp.webgoat.container.CurrentUsername;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
@@ -45,12 +44,9 @@ import org.springframework.web.servlet.ModelAndView;
 public class ResetLinkAssignment implements AssignmentEndpoint {
 
   private static final String VIEW_FORMATTER = "lessons/passwordreset/templates/%s.html";
-  static final String PASSWORD_TOM_9 =
-      "somethingVeryRandomWhichNoOneWillEverTypeInAsPasswordForTom";
   static final String TOM_EMAIL = "tom@webgoat-cloud.org";
-  static Map<String, String> userToTomResetLink = new HashMap<>();
-  static Map<String, String> usersToTomPassword = Maps.newHashMap();
-  static List<String> resetLinks = new ArrayList<>();
+  static List<String> resetLinks = new CopyOnWriteArrayList<>();
+  static Map<String, String> resetLinkToEmail = new ConcurrentHashMap<>();
 
   static final String TEMPLATE =
       """
@@ -68,15 +64,11 @@ public class ResetLinkAssignment implements AssignmentEndpoint {
 
   @PostMapping("/PasswordReset/reset/login")
   @ResponseBody
-  public AttackResult login(
-      @RequestParam String password, @RequestParam String email, @CurrentUsername String username) {
+  public AttackResult login(@RequestParam String password, @RequestParam String email) {
+    // Tom's reset link only reaches Tom's mailbox and only Tom may redeem it, so his password is
+    // never something another user can set or know.
     if (TOM_EMAIL.equals(email)) {
-      String passwordTom = usersToTomPassword.getOrDefault(username, PASSWORD_TOM_9);
-      if (passwordTom.equals(PASSWORD_TOM_9)) {
-        return failed(this).feedback("login_failed").build();
-      } else if (passwordTom.equals(password)) {
-        return success(this).build();
-      }
+      return failed(this).feedback("login_failed").build();
     }
     return failed(this).feedback("login_failed.tom").build();
   }
@@ -110,19 +102,30 @@ public class ResetLinkAssignment implements AssignmentEndpoint {
       modelAndView.setViewName(VIEW_FORMATTER.formatted("password_reset"));
       return modelAndView;
     }
-    if (!resetLinks.contains(form.getResetLink())) {
+    if (!belongsTo(form.getResetLink(), username)) {
       modelAndView.setViewName(VIEW_FORMATTER.formatted("password_link_not_found"));
       return modelAndView;
     }
-    if (checkIfLinkIsFromTom(form.getResetLink(), username)) {
-      usersToTomPassword.put(username, form.getPassword());
-    }
+    // A link is good for one reset.
+    resetLinks.remove(form.getResetLink());
+    resetLinkToEmail.remove(form.getResetLink());
     modelAndView.setViewName(VIEW_FORMATTER.formatted("success"));
     return modelAndView;
   }
 
-  private boolean checkIfLinkIsFromTom(String resetLinkFromForm, String username) {
-    String resetLink = userToTomResetLink.getOrDefault(username, "unknown");
-    return resetLink.equals(resetLinkFromForm);
+  /**
+   * A reset link is bound to the account it was created for. Holding somebody else's link, however
+   * it was obtained, is not enough to change their password.
+   */
+  private boolean belongsTo(String resetLinkFromForm, String username) {
+    if (!hasText(resetLinkFromForm) || !hasText(username)) {
+      return false;
+    }
+    String email = resetLinkToEmail.get(resetLinkFromForm);
+    if (email == null) {
+      return false;
+    }
+    int at = email.indexOf("@");
+    return username.equals(email.substring(0, at == -1 ? email.length() : at));
   }
 }

@@ -8,7 +8,6 @@ import static org.owasp.webgoat.container.assignments.AttackResultBuilder.failed
 import static org.owasp.webgoat.container.assignments.AttackResultBuilder.informationMessage;
 
 import java.util.UUID;
-import org.owasp.webgoat.container.CurrentUsername;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AttackResult;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,13 +44,10 @@ public class ResetLinkAssignmentForgotPassword implements AssignmentEndpoint {
 
   @PostMapping("/PasswordReset/ForgotPassword/create-password-reset-link")
   @ResponseBody
-  public AttackResult sendPasswordResetLink(
-      @RequestParam String email, @CurrentUsername String username) {
+  public AttackResult sendPasswordResetLink(@RequestParam String email) {
     String resetLink = UUID.randomUUID().toString();
     ResetLinkAssignment.resetLinks.add(resetLink);
-    if (ResetLinkAssignment.TOM_EMAIL.equals(email)) {
-      ResetLinkAssignment.userToTomResetLink.put(username, resetLink);
-    }
+    ResetLinkAssignment.resetLinkToEmail.put(resetLink, email);
     try {
       // Host comes from configuration, not the request, and the mail only reaches the owner.
       sendMailToUser(email, webGoatHost + ":" + webGoatPort, resetLink);
