@@ -54,6 +54,7 @@ webgoat.log
 webgoat.properties
 webgoat.script
 TestClass.class
+.mvn/wrapper/*.class
 **/*.flattened-pom.xml
 /.gitconfig
 
