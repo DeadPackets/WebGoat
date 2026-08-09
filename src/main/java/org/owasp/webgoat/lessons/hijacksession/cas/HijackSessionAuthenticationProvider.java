@@ -4,10 +4,10 @@
  */
 package org.owasp.webgoat.lessons.hijacksession.cas;
 
+import java.security.SecureRandom;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.DoublePredicate;
 import java.util.function.Supplier;
 import org.apache.commons.lang3.StringUtils;
@@ -25,6 +25,7 @@ public class HijackSessionAuthenticationProvider implements AuthenticationProvid
   private Queue<String> sessions = new LinkedList<>();
   protected static final int MAX_SESSIONS = 50;
 
+  private static final SecureRandom RANDOM = new SecureRandom();
   private static final DoublePredicate PROBABILITY_DOUBLE_PREDICATE = pr -> pr < 0.75;
   // UUID.randomUUID() draws from SecureRandom, so ids carry no sequence or timestamp to extrapolate
   private static final Supplier<String> GENERATE_SESSION_ID = () -> UUID.randomUUID().toString();
@@ -53,7 +54,7 @@ public class HijackSessionAuthenticationProvider implements AuthenticationProvid
   }
 
   protected void authorizedUserAutoLogin() {
-    if (!PROBABILITY_DOUBLE_PREDICATE.test(ThreadLocalRandom.current().nextDouble())) {
+    if (!PROBABILITY_DOUBLE_PREDICATE.test(RANDOM.nextDouble())) {
       Authentication authentication = AUTHENTICATION_SUPPLIER.get();
       authentication.setAuthenticated(true);
       addSession(authentication.getId());
